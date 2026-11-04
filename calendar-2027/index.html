@@ -31,6 +31,9 @@ const ADDR1 = '১৮ নং হেলাতলা রোড,';
 const ADDR2 = 'খুলনা, হাটখোলার নিচে, খুলনা';
 const PHONE1 = '০১৭১৬১৩১৫৮৭';
 const PHONE2 = '০১৯০৫৬৬৯৭৪৮';
+// Official bKash logo: put the file in this folder and set its name here, e.g. 'bkash-logo.png'.
+// Left empty, a drawn bKash mark is used instead.
+const BKASH_LOGO = '';
 // ---------------------------------------
 
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -68,9 +71,18 @@ const pin = (cx, cy) => `
   <path d="M${cx} ${cy + 6.2} C ${cx - 2.6} ${cy + 2.4}, ${cx - 4.6} ${cy}, ${cx - 4.6} ${cy - 2.4}
            A 4.6 4.6 0 1 1 ${cx + 4.6} ${cy - 2.4} C ${cx + 4.6} ${cy}, ${cx + 2.6} ${cy + 2.4}, ${cx} ${cy + 6.2} Z" fill="#111"/>
   <circle cx="${cx}" cy="${cy - 2.6}" r="1.7" fill="#d9a066" class="hole"/>`;
-const play = (cx, cy) => `
-  <circle cx="${cx}" cy="${cy}" r="10" fill="none" stroke="#111" stroke-width="2.6"/>
-  <path d="M${cx - 3.2} ${cy - 5} L ${cx + 5} ${cy} L ${cx - 3.2} ${cy + 5} Z" fill="#111"/>`;
+const bkash = (cx, top) => {
+  if (BKASH_LOGO) return `<image href="${BKASH_LOGO}" x="${cx - 19}" y="${top}" width="38" height="44" preserveAspectRatio="xMidYMid meet"/>`;
+  // drawn origami-bird mark + "bKash" wordmark (monochrome, matches the engraving)
+  const x = cx - 14.5, y = top, k = 0.85;
+  const P = pts => `<polygon points="${pts.map(([a, b]) => `${x + a * k},${y + b * k}`).join(' ')}" fill="#111"/>`;
+  return `
+  ${P([[0, 9], [11, 5], [10, 13]])}
+  ${P([[12, 6], [33, 0], [26, 15]])}
+  ${P([[11, 15], [25.5, 16.5], [14, 27]])}
+  ${P([[27, 17], [34, 22], [17, 27]])}
+  <text x="${cx}" y="${y + 37}" font-family="'Archivo Black', sans-serif" font-size="10" text-anchor="middle" letter-spacing=".2">bKash</text>`;
+};
 const phone = (cx, cy) => `
   <circle cx="${cx}" cy="${cy}" r="10" fill="none" stroke="#111" stroke-width="2.6"/>
   <path transform="translate(${cx - 6} ${cy - 6}) scale(0.5)" fill="#111"
@@ -123,7 +135,7 @@ function card(half, idx) {
       <text x="236" y="643" font-size="48">S</text>
       <text x="262" y="633" font-size="40">j</text>
     </g>
-    ${play(312, 608)} ${phone(338, 608)}
+    ${bkash(309, 590)} ${phone(342, 608)}
     <text class="d" x="356" y="602" font-size="14.5" letter-spacing=".3"><tspan class="bn" font-weight="700">${PHONE1}</tspan></text>
     <text class="d" x="356" y="620" font-size="14.5" letter-spacing=".3"><tspan class="bn" font-weight="700">${PHONE2}</tspan></text>
     <rect x="50" y="650" width="400" height="15" fill="#fff"/>
