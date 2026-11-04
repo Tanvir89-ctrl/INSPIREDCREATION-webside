@@ -33,7 +33,7 @@ const PHONE1 = '০১৭১৬১৩১৫৮৭';
 const PHONE2 = '০১৯০৫৬৬৯৭৪৮';
 // Official bKash logo: put the file in this folder and set its name here, e.g. 'bkash-logo.png'.
 // Left empty, a drawn bKash mark is used instead.
-const BKASH_LOGO = new URLSearchParams(location.search).has('plain') ? 'bkash-logo-black.png' : 'bkash-logo.png';
+const BKASH_LOGO = 'bkash-bird-black.png';  // black bKash bird, drawn inside a ring like the call icon
 // ---------------------------------------
 
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -72,7 +72,7 @@ const pin = (cx, cy) => `
            A 4.6 4.6 0 1 1 ${cx + 4.6} ${cy - 2.4} C ${cx + 4.6} ${cy}, ${cx + 2.6} ${cy + 2.4}, ${cx} ${cy + 6.2} Z" fill="#111"/>
   <circle cx="${cx}" cy="${cy - 2.6}" r="1.7" fill="#d9a066" class="hole"/>`;
 const bkash = (cx, top) => {
-  if (BKASH_LOGO) return `<image href="${BKASH_LOGO}" x="${cx - 11.5}" y="${top - 11.5}" width="23" height="23"/>`;
+  if (BKASH_LOGO) return `<circle cx="${cx}" cy="${top}" r="10" fill="none" stroke="#111" stroke-width="2.6"/><image href="${BKASH_LOGO}" x="${cx - 6.6}" y="${top - 6.6}" width="13.2" height="13.2"/>`;
   // drawn origami-bird mark + "bKash" wordmark (monochrome, matches the engraving)
   const x = cx - 14.5, y = top, k = 0.85;
   const P = pts => `<polygon points="${pts.map(([a, b]) => `${x + a * k},${y + b * k}`).join(' ')}" fill="#111"/>`;
