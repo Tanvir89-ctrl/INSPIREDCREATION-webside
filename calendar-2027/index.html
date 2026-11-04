@@ -97,7 +97,7 @@ function card(half, idx) {
   }
   const digits = String(YEAR).split('');
   digits.forEach((dg, i) => {
-    body += `<text class="yr" x="0" y="0" font-size="104" text-anchor="middle" transform="translate(250 ${197 + i * 117}) scale(1.16 1)">${dg}</text>`;
+    body += `<text class="yr" x="0" y="0" font-size="104" text-anchor="middle" transform="translate(250 ${187 + i * 117}) scale(1.16 1)">${dg}</text>`;
   });
   return `
 <svg class="card" id="card${idx}" xmlns="${NS}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
@@ -130,7 +130,7 @@ function card(half, idx) {
     ${pin(38, 618)}
     <text class="bn" x="54" y="613" font-size="10.6">${ADDR1}</text>
     <text class="bn" x="54" y="628" font-size="10.6">${ADDR2}</text>
-    <image href="shop-logo.png" x="208" y="563" width="84" height="84"/>
+    <image href="shop-logo.png" x="208" y="552" width="84" height="84"/>
     ${bkash(312, 608)} ${phone(338, 608)}
     <text class="d" x="356" y="602" font-size="14.5" letter-spacing=".3"><tspan class="bn" font-weight="700">${PHONE1}</tspan></text>
     <text class="d" x="356" y="620" font-size="14.5" letter-spacing=".3"><tspan class="bn" font-weight="700">${PHONE2}</tspan></text>
