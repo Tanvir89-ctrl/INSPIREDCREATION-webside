@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="70mm" height="36mm" viewBox="0 0 70 36">
+  <title>WOOD MASTER keychain tag - 70 x 36 mm</title>
+  <!-- CUT layer (red hairline): outer shape 70 x 36 mm, corner radius 4 mm, key-ring hole 3.2 mm dia -->
+  <g id="CUT" fill="none" stroke="#ff0000" stroke-width="0.1">
+    <rect x="0" y="0" width="70" height="36" rx="4" ry="4"/>
+    <circle cx="5.5" cy="18" r="1.6"/>
+  </g>
+  <!-- ENGRAVE layer (black): WOOD (outline) + MASTER (solid) -->
+  <g id="ENGRAVE" font-family="Montserrat, Arial, Helvetica, sans-serif" font-weight="800" >
+    <text x="11" y="22.5" font-size="10" textLength="22" lengthAdjust="spacingAndGlyphs" fill="none" stroke="#000" stroke-width="0.25">WOOD</text>
+    <text x="35.5" y="22.5" font-size="10" textLength="30" lengthAdjust="spacingAndGlyphs" fill="#000">MASTER</text>
+  </g>
+</svg>
