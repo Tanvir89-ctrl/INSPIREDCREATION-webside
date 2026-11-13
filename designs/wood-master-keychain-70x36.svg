@@ -6,7 +6,11 @@
     <circle cx="5.5" cy="18" r="1.6"/>
   </g>
   <!-- ENGRAVE layer (black): WOOD (outline) + MASTER (solid) -->
-  <g id="ENGRAVE" font-family="Montserrat, Arial, Helvetica, sans-serif" font-weight="800" >
+  <g id="ENGRAVE">
+    <!-- thick inner border, 2 mm inset from the cut edge, 0.8 mm line -->
+    <rect x="2" y="2" width="66" height="32" rx="2.5" ry="2.5" fill="none" stroke="#000" stroke-width="0.8"/>
+  </g>
+  <g id="ENGRAVE-TEXT" font-family="Montserrat, Arial, Helvetica, sans-serif" font-weight="800" >
     <text x="11" y="22.5" font-size="10" textLength="22" lengthAdjust="spacingAndGlyphs" fill="none" stroke="#000" stroke-width="0.25">WOOD</text>
     <text x="35.5" y="22.5" font-size="10" textLength="30" lengthAdjust="spacingAndGlyphs" fill="#000">MASTER</text>
   </g>
