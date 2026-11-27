@@ -1,0 +1,15 @@
+# Server secrets and runtime data — never commit these
+api/config.php
+data/*
+!data/.htaccess
+uploads/*
+!uploads/.htaccess
+assets/products/*
+!assets/products/.htaccess
+assets/landing/*
+!assets/landing/.htaccess
+assets/payment/*
+!assets/payment/.htaccess
+
+# Local tools
+tools/
