@@ -14,6 +14,8 @@ return [
     // Where new-order notifications are emailed (needs PHP mail(), available on most cPanel hosting)
     'order_email' => 'inspiredcreationbd@gmail.com',
     'whatsapp'    => '8801321744476',
+    // The website's address, used in review links sent by email/WhatsApp (and by the cron job)
+    'site_url'    => 'https://inspiredcreationbd.com',
 
     // Pricing rules (must match the website)
     'customization_fee' => 350,   // per item for Custom Order Studio orders

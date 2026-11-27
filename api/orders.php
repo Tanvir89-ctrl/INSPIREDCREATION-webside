@@ -221,19 +221,21 @@ try {
         'payment_method' => $paymentMethod !== '' ? $paymentMethod : null,
         'trx_id'         => $trx !== '' ? $trx : null,
         'customer_email' => $email !== '' ? $email : null,
+        // The visitor's Facebook cookies, page link and browser, kept so later Pixel events match the customer
+        'meta_json'      => json_encode(ic_meta_request_context(), JSON_UNESCAPED_SLASHES),
     ];
 
     $pdo->beginTransaction();
     $pdo->prepare('INSERT INTO orders (code, type, status, customer_name, whatsapp, address, region, items_json, details_json,
             subtotal_bdt, delivery_bdt, total_bdt, advance_bdt, payment_method, trx_id, is_important, needed_by, reminder_date,
-            reminder_note, created_at, updated_at, status_changed_at, client_ip, customer_email)
-        VALUES (?, ?, \'new\', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            reminder_note, created_at, updated_at, status_changed_at, client_ip, customer_email, meta_json)
+        VALUES (?, ?, \'new\', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         ->execute([
             $order['code'], $type, $name, $phone, $order['address'], $region,
             json_encode($items, JSON_UNESCAPED_UNICODE), json_encode($details, JSON_UNESCAPED_UNICODE),
             $subtotal, $delivery, $total, $advance, $order['payment_method'], $order['trx_id'],
             $neededBy !== null ? 1 : 0, $neededBy, $reminderDate, $neededBy !== null ? "Customer needs it by $neededBy" : null,
-            $now, $now, $now, $ip, $order['customer_email'],
+            $now, $now, $now, $ip, $order['customer_email'], $order['meta_json'],
         ]);
     $orderId = (int) $pdo->lastInsertId();
 

@@ -110,7 +110,7 @@ admin_header('Orders', 'orders.php');
   </form>
 </div>
 
-<div class="flex flex-wrap gap-2 mb-5">
+<div class="flex flex-nowrap sm:flex-wrap gap-2 mb-5 overflow-x-auto pb-1 [scrollbar-width:none]">
   <a href="orders.php" class="btn <?= !$query ? 'btn-dark' : 'btn-light' ?> !py-1.5">All</a>
   <a href="orders.php?period=today" class="btn <?= $period === 'today' && $status === '' ? 'btn-dark' : 'btn-light' ?> !py-1.5">Today</a>
   <a href="orders.php?important=1" class="btn <?= $important ? 'btn-dark' : 'btn-light' ?> !py-1.5"><i class="fa-solid fa-star text-amber-500"></i> Important</a>
@@ -122,8 +122,9 @@ admin_header('Orders', 'orders.php');
 <form method="post" class="card overflow-hidden" id="bulkForm">
   <?= csrf_field() ?>
   <input type="hidden" name="return" value="<?= h(http_build_query($query)) ?>">
-  <div class="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-cream-300 bg-cream-50 text-sm">
-    <span class="text-stone-500 mr-1"><span id="selectedCount">0</span> selected:</span>
+  <div class="flex flex-nowrap sm:flex-wrap items-center gap-2 px-3 sm:px-4 py-3 border-b border-cream-300 bg-cream-50 text-sm overflow-x-auto [scrollbar-width:none]">
+    <label class="sm:hidden flex items-center gap-1.5 text-stone-600 whitespace-nowrap"><input type="checkbox" id="selectAllMobile" class="rounded w-5 h-5"> All</label>
+    <span class="text-stone-500 mr-1 whitespace-nowrap"><span id="selectedCount">0</span> selected:</span>
     <button name="action" value="confirm" class="btn btn-light !py-1.5"><i class="fa-solid fa-circle-check text-sky-600"></i> Confirm</button>
     <?php if ($defaultCourier = ic_default_courier($pdo)): ?>
       <button name="action" value="courier" class="btn btn-light !py-1.5"><i class="fa-solid fa-truck-fast text-indigo-600"></i> Send to <?= h(IC_COURIERS[$defaultCourier]['label']) ?></button>
@@ -139,7 +140,33 @@ admin_header('Orders', 'orders.php');
   <?php if (!$orders): ?>
     <p class="p-6 text-sm text-stone-500">No orders found.</p>
   <?php else: ?>
-  <div class="overflow-x-auto">
+  <!-- Phones: one card per order (the table below is for bigger screens) -->
+  <div class="sm:hidden divide-y divide-cream-200">
+    <?php foreach ($orders as $o):
+        $items = (array) json_decode($o['items_json'], true); ?>
+      <div class="flex gap-3 p-3">
+        <input type="checkbox" name="ids[]" value="<?= (int) $o['id'] ?>" class="row-check rounded mt-1 w-5 h-5 flex-shrink-0" aria-label="Select <?= h($o['code']) ?>">
+        <a href="order.php?id=<?= (int) $o['id'] ?>" class="flex-1 min-w-0 block">
+          <span class="flex items-start justify-between gap-2">
+            <span class="min-w-0">
+              <span class="font-semibold text-wood-900"><?= h($o['code']) ?></span><?php if ($o['is_important']): ?> <i class="fa-solid fa-star text-amber-500 text-xs"></i><?php endif; ?>
+              <span class="block text-xs text-stone-400"><?= h(date('d M, g:i a', strtotime($o['created_at']))) ?></span>
+            </span>
+            <span class="text-right flex-shrink-0"><?= status_badge($o['status']) ?>
+              <span class="block font-semibold text-wood-900 mt-1"><?= $o['total_bdt'] === null ? 'Quote' : money($o['total_bdt']) ?></span></span>
+          </span>
+          <span class="block text-sm mt-1"><?= h($o['customer_name']) ?> · <span class="text-emerald-700"><?= h($o['whatsapp']) ?></span></span>
+          <span class="block text-xs text-stone-500 truncate"><?= h(($items[0]['title'] ?? '') . (isset($items[0]) ? ' × ' . (int) $items[0]['qty'] : '')) ?><?= count($items) > 1 ? ' +' . (count($items) - 1) . ' more' : '' ?></span>
+          <span class="flex flex-wrap items-center gap-2 mt-1 text-xs text-stone-500">
+            <?= score_badge($o['delivery_score']) ?>
+            <?php if ($o['courier']): ?><span><i class="fa-solid fa-truck-fast"></i> <?= h($o['courier']) ?> <?= h($o['tracking_code'] ?: $o['consignment_id']) ?></span><?php endif; ?>
+            <?php if ($o['reminder_date']): ?><span class="<?= $o['reminder_date'] <= date('Y-m-d') ? 'text-red-700 font-semibold' : '' ?>"><i class="fa-regular fa-bell"></i> <?= h(date('d M', strtotime($o['reminder_date']))) ?></span><?php endif; ?>
+          </span>
+        </a>
+      </div>
+    <?php endforeach; ?>
+  </div>
+  <div class="overflow-x-auto hidden sm:block">
     <table class="min-w-full divide-y divide-cream-200">
       <thead class="bg-cream-50">
         <tr>
@@ -199,11 +226,14 @@ admin_header('Orders', 'orders.php');
 
 <script>
   const checks = [...document.querySelectorAll('.row-check')];
-  const updateCount = () => { document.getElementById('selectedCount').textContent = checks.filter(c => c.checked).length; };
-  document.getElementById('selectAll')?.addEventListener('change', (e) => { checks.forEach(c => { c.checked = e.target.checked; }); updateCount(); });
+  // Each order has a checkbox in the phone cards and in the table; only the visible ones count and are sent
+  const visible = () => checks.filter(c => c.offsetParent !== null);
+  const updateCount = () => { document.getElementById('selectedCount').textContent = visible().filter(c => c.checked).length; };
+  ['selectAll', 'selectAllMobile'].forEach(id => document.getElementById(id)?.addEventListener('change', (e) => { visible().forEach(c => { c.checked = e.target.checked; }); updateCount(); }));
   checks.forEach(c => c.addEventListener('change', updateCount));
   document.getElementById('bulkForm').addEventListener('submit', (e) => {
-    if (!checks.some(c => c.checked)) { e.preventDefault(); alert('Tick at least one order first.'); }
+    if (!visible().some(c => c.checked)) { e.preventDefault(); alert('Tick at least one order first.'); return; }
+    checks.filter(c => c.offsetParent === null).forEach(c => { c.disabled = true; }); // never send an order twice
   });
 </script>
 <?php admin_footer();

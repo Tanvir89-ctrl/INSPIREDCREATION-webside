@@ -112,6 +112,30 @@ function ic_meta_browser_event(PDO $pdo, array $in): void
     }
 }
 
+// The customer's browser details for an order: from the order's saved meta_json when it has one (orders sent later,
+// e.g. after "Not fake"), otherwise from the order request that is happening right now
+function ic_meta_order_context(array $order): array
+{
+    $saved = !empty($order['meta_json']) ? (json_decode((string) $order['meta_json'], true) ?: []) : null;
+    if ($saved === null) {
+        $saved = ic_meta_request_context();
+    }
+    return array_merge(['fbp' => '', 'fbc' => '', 'url' => '', 'ua' => '', 'ip' => ''], array_map('strval', $saved));
+}
+
+// What Meta needs to match an order to the visitor, read from the website's order request
+function ic_meta_request_context(): array
+{
+    $url = filter_var((string) ($_POST['page_url'] ?? ''), FILTER_VALIDATE_URL) ?: (filter_var((string) ($_SERVER['HTTP_REFERER'] ?? ''), FILTER_VALIDATE_URL) ?: '');
+    return [
+        'fbp' => ic_clean((string) ($_POST['fbp'] ?? ''), 200),
+        'fbc' => ic_clean((string) ($_POST['fbc'] ?? ''), 200),
+        'url' => substr($url, 0, 500),
+        'ua'  => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 400),
+        'ip'  => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+    ];
+}
+
 // Sends a saved order (e.g. one the shop just marked "Not fake") with its original time; Meta only accepts the last 7 days
 function ic_meta_order_event_from_row(PDO $pdo, array $row): void
 {
@@ -133,13 +157,21 @@ function ic_meta_order_event(PDO $pdo, array $order, array $items, ?int $eventTi
     $event = $order['total_bdt'] === null ? 'Lead' : 'Purchase';
     $phone = '88' . $order['whatsapp']; // 8801XXXXXXXXX, digits only
     $names = preg_split('/\s+/', trim($order['customer_name'])) ?: [];
+    // The customer's own browser details, saved when the order was placed (never the admin's, when an order is
+    // sent later after "Not fake")
+    $ctx = ic_meta_order_context($order);
     $userData = [
         'ph'                => [ic_meta_hash($phone)],
         'external_id'       => [ic_meta_hash($phone)],
         'country'           => [ic_meta_hash('bd')],
-        'client_ip_address' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
-        'client_user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 400),
+        'client_ip_address' => $ctx['ip'],
+        'client_user_agent' => $ctx['ua'],
     ];
+    // City from the delivery address (district), lower-case with no spaces as Meta asks
+    $place = !empty($order['address']) ? ic_geo_locate((string) $order['address'], $order['region'] ?? null) : null;
+    if ($place && empty($place['guessed'])) {
+        $userData['ct'] = [ic_meta_hash(preg_replace('/[^a-z]/', '', strtolower(IC_BD_DISTRICTS[$place['district']][0])))];
+    }
     if (!empty($order['customer_email'])) {
         $userData['em'] = [ic_meta_hash(strtolower(trim($order['customer_email'])))]; // email gives Meta the best match
     }
@@ -150,9 +182,8 @@ function ic_meta_order_event(PDO $pdo, array $order, array $items, ?int $eventTi
         $userData['ln'] = [ic_meta_hash((string) end($names))];
     }
     foreach (['fbp', 'fbc'] as $cookie) {
-        $value = ic_clean((string) ($_POST[$cookie] ?? ''), 200);
-        if ($value !== '') {
-            $userData[$cookie] = $value;
+        if ($ctx[$cookie] !== '') {
+            $userData[$cookie] = $ctx[$cookie];
         }
     }
     $customData = [
@@ -168,7 +199,7 @@ function ic_meta_order_event(PDO $pdo, array $order, array $items, ?int $eventTi
     if ($order['total_bdt'] !== null) {
         $customData['value'] = (float) $order['total_bdt'];
     }
-    $sourceUrl = filter_var((string) ($_POST['page_url'] ?? ''), FILTER_VALIDATE_URL) ?: null;
+    $sourceUrl = $ctx['url'] !== '' ? $ctx['url'] : null;
     try {
         $reply = ic_meta_send($pdo, [array_filter([
             'event_name'       => $event,

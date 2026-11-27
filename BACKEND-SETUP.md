@@ -144,6 +144,14 @@ Cron na dileo admin panel khulle protি 15 minute e eta nijei chole; tobe remin
 ## Nijer computer e test korte chaile
 `api/config.php` e `'driver' => 'sqlite'` din, tahole MySQL chara-i chalano jay (PHP lagbe).
 
+## Customer review (asol review)
+- Shudhu **deliver hoyeche** emon order er customer review dite pare — protita order er alada gopon link (`review.php?o=…&t=…`), keu anuman kore banate pare na.
+- Order **Delivered** hole: customer email dile review link nijei email e jay. Na dile admin er order page e **"Ask for review on WhatsApp"** button chapun (Bangla message + link ready) ba **"Copy review link"**.
+- Customer star (১–৫), lekha ar chobi dey, ar "website e dekhano jabe" tik dey. Chobi theke phone er location data muche fela hoy.
+- Admin → ⋮ → **Product → Reviews**: "Show on website" chaple website, landing page ar product er star e dekhay (**✓ Verified Buyer**). 5 star na holeo shotti review approve korun — tate bishshash bare.
+- Product er star ekhon shudhu asol review theke hishab hoy.
+- Hosting e `api/config.php` e `'site_url' => 'https://inspiredcreationbd.com'` din (cron/email e link thik thakar jonno).
+
 ## Customer email (order confirmation)
 - Website checkout, custom order form ar landing page e **Email (optional)** box ache. Email dile customer Bangla te order confirmation pay: order nombor, product, dam, delivery charge, payment, thikana, WhatsApp button.
 - Customer email er "Reply" korle apnar order email e (`order_email`) ashe.

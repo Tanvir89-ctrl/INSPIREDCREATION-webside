@@ -360,6 +360,24 @@ $sections['gallery'] = function () use ($customerPhotos, $data): string {
     }
     return $html . '</div></div>';
 };
+// Real reviews of this product (approved in admin → Reviews), with the star average
+$sections['reviews'] = function () use ($pdo, $product): string {
+    $reviews = ic_reviews_public($pdo, $product['id'], 9);
+    if (!$reviews) {
+        return '';
+    }
+    $avg = round(array_sum(array_column($reviews, 'rating')) / count($reviews), 1);
+    $stats = ic_review_stats($pdo)[$product['id']] ?? ['rating' => $avg, 'count' => count($reviews)];
+    $html = '<div class="wrap"><h2 class="sec-title rv">ক্রেতাদের রিভিউ</h2><p class="rv-summary rv"><span class="rv-stars">' . str_repeat('★', (int) round($stats['rating'])) . '</span> '
+        . ic_english_to_bangla_digits((string) $stats['rating']) . ' / ৫ · ' . ic_english_to_bangla_digits((string) $stats['count']) . 'টি রিভিউ</p><div class="rv-grid">';
+    foreach ($reviews as $i => $r) {
+        $html .= '<figure class="rv-card rv" style="--d:' . ($i % 3) . '"><div class="rv-stars">' . str_repeat('★', (int) $r['rating']) . '<span class="rv-off">' . str_repeat('★', 5 - (int) $r['rating']) . '</span></div>'
+            . ($r['body'] ? '<blockquote>“' . nl2br(lp_e($r['body'])) . '”</blockquote>' : '')
+            . ($r['photo'] ? '<img src="' . lp_e($r['photo']) . '" alt="" loading="lazy">' : '')
+            . '<figcaption><b>' . lp_e($r['name']) . '</b>' . ($r['district'] ? ' · ' . lp_e($r['district']) : '') . '<span class="rv-ok">✓ যাচাইকৃত ক্রেতা</span></figcaption></figure>';
+    }
+    return $html . '</div></div>';
+};
 $sections['faq'] = function () use ($faq, $data): string {
     if (!$faq) {
         return '';
@@ -758,6 +776,16 @@ $hero = function () use ($data, $tpl, $heroLayout, $slider, $priceBox, $countdow
     .g-item { padding: 0; border: 0; border-radius: 14px; overflow: hidden; cursor: zoom-in; background: var(--card); }
     .g-item img { width: 100%; aspect-ratio: 1; object-fit: cover; transition: transform .4s; }
     .g-item:hover img { transform: scale(1.06); }
+    .rv-summary { text-align: center; margin: -14px 0 22px; color: var(--muted); font-weight: 600; }
+    .rv-stars { color: #f59e0b; letter-spacing: 2px; }
+    .rv-off { color: #ddd; }
+    .rv-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .rv-card { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+    .rv-card blockquote { margin: 0; color: var(--ink); line-height: 1.6; }
+    .rv-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 12px; }
+    .rv-card figcaption { margin-top: auto; font-size: 15px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .rv-card figcaption b { color: var(--ink); }
+    .rv-ok { margin-left: auto; background: #dcfce7; color: #166534; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
     .faq { display: grid; gap: 10px; }
     .faq details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 0 18px; }
     .faq summary { list-style: none; cursor: pointer; padding: 15px 0; font-weight: 700; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
@@ -1168,7 +1196,14 @@ case 'classic': ?>
     <?= $hero() ?>
     <?php
     $alt = true;
-    foreach ($tpl['sections'] as $key) {
+    // Every design shows real customer reviews just before the questions (or the order form)
+    $order = $tpl['sections'];
+    if (!in_array('reviews', $order, true)) {
+        $at = array_search('faq', $order, true);
+        $at = $at === false ? array_search('order', $order, true) : $at;
+        array_splice($order, $at === false ? count($order) : $at, 0, ['reviews']);
+    }
+    foreach ($order as $key) {
         if ($key === 'hero' || !isset($sections[$key])) {
             continue;
         }
@@ -1559,6 +1594,8 @@ case 'classic': ?>
       fd.append('address', address);
       fd.append('notes', field('notes').value.trim());
       fd.append('landing', LP.landing);
+      // Facebook cookies and this page's link, so the server's Purchase event matches this visitor
+      Object.entries({ ...cookies(), page_url: location.href }).forEach(([k, v]) => fd.append(k, v));
       fd.append('_honey', field('_honey').value);
       const btn = $('#submitBtn'); btn.classList.add('busy');
       try {

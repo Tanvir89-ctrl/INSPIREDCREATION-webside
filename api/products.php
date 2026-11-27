@@ -12,9 +12,15 @@ try {
         $landingRows[$row['product_id']] = (bool) $row['is_enabled'];
     }
     $autoOn = ic_landing_auto_on($pdo);
-    $products = array_map(function ($r) use ($landingRows, $autoOn) {
+    $stars = ic_review_stats($pdo); // stars come from approved customer reviews
+    $products = array_map(function ($r) use ($landingRows, $autoOn, $stars) {
         $on = $landingRows[$r['id']] ?? $autoOn;
-        return ic_product_to_public($r) + ['landing' => $on ? ic_landing_url($r['id']) : null];
+        $p = ic_product_to_public($r) + ['landing' => $on ? ic_landing_url($r['id']) : null];
+        if (isset($stars[$r['id']])) {
+            $p['rating'] = $stars[$r['id']]['rating'];
+            $p['reviewCount'] = $stars[$r['id']]['count'];
+        }
+        return $p;
     }, $rows);
     header('Cache-Control: no-store');
     ic_json(['ok' => true, 'products' => $products, 'shipping' => ic_shipping_defaults($pdo)]);

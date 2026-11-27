@@ -58,7 +58,7 @@ const IC_STEADFAST_STATUS_MAP = [
     'cancelled'                          => 'returned',
 ];
 
-const IC_SCHEMA_VERSION = 8;
+const IC_SCHEMA_VERSION = 10;
 
 // Products that start out customizable (engraved / branded pieces); the admin can change this per product
 const IC_DEFAULT_CUSTOMIZABLE = ['corp-13', 'corp-14', 'corp-15', 'corp-16', 'key-18', 'box-01', 'frame-03'];
@@ -227,6 +227,7 @@ function ic_migrate(PDO $pdo): void
         'score_reasons'     => 'TEXT NULL',
         'client_ip'         => 'VARCHAR(45) NULL',
         'customer_email'    => 'VARCHAR(190) NULL',
+        'meta_json'         => 'TEXT NULL', // the visitor's Facebook cookies, page and browser, for later Pixel events
     ];
     $have = ic_columns($pdo, 'orders');
     foreach ($columns as $column => $type) {
@@ -264,6 +265,20 @@ function ic_migrate(PDO $pdo): void
         kind VARCHAR(20) NOT NULL,
         k VARCHAR(120) NOT NULL,
         at VARCHAR(19) NOT NULL
+    )$tail");
+    // Customer reviews: written from a private link after delivery, shown only after the shop approves them
+    $pdo->exec("CREATE TABLE IF NOT EXISTS reviews (
+        id $autoId,
+        order_id INT NOT NULL,
+        product_id VARCHAR(60) NOT NULL,
+        name VARCHAR(80) NOT NULL,
+        district VARCHAR(60) NULL,
+        rating TINYINT NOT NULL,
+        body TEXT NULL,
+        photo VARCHAR(120) NULL,
+        status VARCHAR(12) NOT NULL DEFAULT 'pending',
+        created_at VARCHAR(19) NOT NULL,
+        approved_at VARCHAR(19) NULL
     )$tail");
     // Statuses from the first version of the admin panel
     $pdo->exec("UPDATE orders SET status = 'confirmed' WHERE status = 'advance_verified'");
@@ -333,6 +348,9 @@ function ic_set_status(PDO $pdo, int $orderId, string $status): void
     $now = ic_now();
     $pdo->prepare('UPDATE orders SET status = ?, status_changed_at = ?, updated_at = ? WHERE id = ?')
         ->execute([$status, $now, $now, $orderId]);
+    if ($status === 'delivered') {
+        ic_review_after_delivery($pdo, $orderId); // emails the review link once, when the customer gave an email
+    }
 }
 
 // Orders still New/Confirmed after the day they reached that status missed shipping → Hold
@@ -715,3 +733,5 @@ function ic_notify_new_order(array $order, string $summary): void
 require __DIR__ . '/lib-courier.php';
 require __DIR__ . '/lib-meta.php';
 require __DIR__ . '/lib-landing.php';
+require_once __DIR__ . '/lib-geo.php';
+require __DIR__ . '/lib-reviews.php';

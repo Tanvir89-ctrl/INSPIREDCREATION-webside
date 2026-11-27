@@ -489,6 +489,13 @@ admin_header($order['code'], 'orders.php');
       <?php foreach ($waTemplates as $label => $text): ?>
         <a href="<?= h(whatsapp_link($order['whatsapp'], $text)) ?>" target="_blank" rel="noopener" class="btn btn-light w-full !justify-start"><i class="fa-brands fa-whatsapp text-emerald-700"></i> <?= h($label) ?></a>
       <?php endforeach; ?>
+      <?php if (in_array($order['status'], ['delivered', 'partial'], true) && ($reviewUrl = ic_review_url(ic_db(), $order))): ?>
+        <!-- Real reviews: only delivered customers get this private link -->
+        <a href="<?= h(whatsapp_link($order['whatsapp'], ic_review_whatsapp_text(ic_db(), $order))) ?>" target="_blank" rel="noopener" class="btn btn-gold w-full !justify-start"><i class="fa-solid fa-star"></i> Ask for review on WhatsApp</a>
+        <button type="button" class="btn btn-light w-full !justify-start" onclick="navigator.clipboard.writeText(<?= h(json_encode($reviewUrl)) ?>).then(() => { this.textContent = 'Review link copied ✓'; })"><i class="fa-regular fa-copy"></i> Copy review link</button>
+      <?php elseif (!in_array($order['status'], ['cancelled', 'fake', 'returned'], true)): ?>
+        <p class="text-xs text-stone-400"><i class="fa-regular fa-star"></i> A review link appears here once the order is Delivered.</p>
+      <?php endif; ?>
     </section>
 
     <form method="post" onsubmit="return confirm('Delete order <?= h($order['code']) ?> and its files permanently?');">

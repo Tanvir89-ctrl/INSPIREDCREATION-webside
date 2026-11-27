@@ -10,6 +10,8 @@ assets/landing/*
 !assets/landing/.htaccess
 assets/payment/*
 !assets/payment/.htaccess
+assets/reviews/*
+!assets/reviews/.htaccess
 
 # Local tools
 tools/

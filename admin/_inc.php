@@ -228,10 +228,16 @@ function admin_header(string $title, string $active = ''): void
               }
           });
 
-          $group('Product', 'fa-box-open', in_array($script, ['products.php', 'product.php', 'visibility.php', 'customers.php'], true), function () use ($menuLink, $script) {
+          $pendingReviews = 0;
+          try {
+              $pendingReviews = (int) ic_db()->query("SELECT COUNT(*) FROM reviews WHERE status = 'pending'")->fetchColumn();
+          } catch (Throwable $e) {
+          }
+          $group('Product', 'fa-box-open', in_array($script, ['products.php', 'product.php', 'visibility.php', 'customers.php', 'reviews.php'], true), function () use ($menuLink, $script, $pendingReviews) {
               $menuLink('products.php', 'fa-boxes-stacked', 'All products', $script === 'products.php' || ($script === 'product.php' && !empty($_GET['id'])));
               $menuLink('product.php', 'fa-square-plus', 'Add product', $script === 'product.php' && empty($_GET['id']));
               $menuLink('visibility.php', 'fa-toggle-on', 'Store Visibility', $script === 'visibility.php');
+              $menuLink('reviews.php', 'fa-star-half-stroke', 'Reviews', $script === 'reviews.php', $pendingReviews);
               $menuLink('customers.php', 'fa-users', 'Customers by product', $script === 'customers.php');
           });
 

@@ -222,7 +222,7 @@
   <!-- Notification Bar -->
   <aside aria-label="Announcement" class="bg-wood-950 text-cream-200 text-[11px] sm:text-xs tracking-wide py-2.5 px-4 text-center font-medium flex items-center justify-center space-x-2">
     <span class="inline-block text-amber-300">✨</span>
-    <span>Free delivery across Bangladesh | Crafted from 100% solid natural wood and MDF board | Custom engraving options available</span>
+    <span><span id="freeDeliveryNote">Free delivery on orders over ৳2,500</span> | Cash on delivery all over Bangladesh | Crafted from 100% solid natural wood and MDF board | Custom engraving available</span>
   </aside>
 
   <!-- Navigation Bar -->
@@ -423,8 +423,8 @@
   <!-- Category Filter Pills Bar -->
   <section class="bg-cream-50/95 backdrop-blur border-b border-cream-300/70 py-4 sticky top-20 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar py-1">
-        <div class="flex items-center gap-2" id="categoryFilterContainer">
+      <div class="flex items-center justify-between gap-2 sm:gap-4 py-1">
+        <div class="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto no-scrollbar" id="categoryFilterContainer">
           <button data-category="all" class="category-btn active whitespace-nowrap px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-wood-800 text-white shadow-sm transition">All Creations</button>          <button data-category="boxes" class="category-btn whitespace-nowrap px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-wood-100 text-wood-800 hover:bg-wood-200 transition">Gift Boxes</button>
           <button data-category="wall" class="category-btn whitespace-nowrap px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-wood-100 text-wood-800 hover:bg-wood-200 transition">Wall Decor</button>
           <button data-category="home" class="category-btn whitespace-nowrap px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-wood-100 text-wood-800 hover:bg-wood-200 transition">Home Accessories</button>
@@ -435,7 +435,7 @@
         <!-- Sort Select -->
         <div class="flex items-center gap-2 flex-shrink-0">
           <span class="text-xs text-stone-500 font-medium hidden sm:inline">Sort:</span>
-          <select id="sortSelect" class="text-xs sm:text-sm border border-cream-300 rounded-full px-3 py-1.5 bg-white text-stone-700 focus:outline-none focus:border-wood-600">
+          <select id="sortSelect" aria-label="Sort products" class="w-[92px] sm:w-auto text-xs sm:text-sm border border-cream-300 rounded-full px-2 sm:px-3 py-1.5 bg-white text-stone-700 focus:outline-none focus:border-wood-600">
             <option value="featured">Featured First</option>
             <option value="price-asc">Price: Low to High</option>
             <option value="price-desc">Price: High to Low</option>
@@ -462,7 +462,7 @@
       </div>
 
       <!-- Products Grid -->
-      <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+      <div id="productsGrid" class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
         <!-- Rendered dynamically via JavaScript -->
       </div>
 
@@ -705,75 +705,33 @@
     </div>
   </section>
 
-  <!-- Customer Testimonials -->
+  <!-- Customer reviews: only real ones. Until customers send them, invite reviews on Facebook. -->
   <section id="reviews" class="py-20 sm:py-24 bg-cream-200/60">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-      <div class="text-center max-w-2xl mx-auto mb-12 space-y-3">
-        <span class="eyebrow">Kind Words</span>
-        <h2 class="section-title">Loved by Thoughtful Gift-Givers</h2>
-        <p class="text-stone-600 text-sm sm:text-base">What our customers say once the wrapping comes off.</p>
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto space-y-3">
+        <span class="eyebrow">Customer Reviews</span>
+        <h2 class="section-title">Real Words from Real Customers</h2>
+        <p class="text-stone-600 text-sm sm:text-base">We only show reviews from people who actually ordered from us. Bought something? We would love to hear what you think.</p>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Review 1 -->
-        <div class="bg-cream-50 p-6 sm:p-7 rounded-3xl border border-cream-300/70 shadow-sm flex flex-col justify-between">
-          <div>
-            <div class="flex text-amber-500 text-sm mb-3">
-              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-            </div>
-            <p class="text-stone-700 text-sm italic leading-relaxed">
-              "Ordered the Royal Keepsake box with custom anniversary engraving for my husband. The wood grain and brass latch look even better than the pictures. He was genuinely touched!"
-            </p>
-          </div>
-          <div class="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between">
-            <div>
-              <p class="font-bold text-wood-900 text-sm">Nusrat Jahan</p>
-              <p class="text-xs text-stone-400">Dhanmondi, Dhaka</p>
-            </div>
-            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Verified Buyer</span>
-          </div>
-        </div>
-
-        <!-- Review 2 -->
-        <div class="bg-cream-50 p-6 sm:p-7 rounded-3xl border border-cream-300/70 shadow-sm flex flex-col justify-between">
-          <div>
-            <div class="flex text-amber-500 text-sm mb-3">
-              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-            </div>
-            <p class="text-stone-700 text-sm italic leading-relaxed">
-              "We bought 25 executive walnut desk organizers for our corporate year-end gifts with company logos engraved. The finishing and packaging were 10/10. Will definitely order again."
-            </p>
-          </div>
-          <div class="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between">
-            <div>
-              <p class="font-bold text-wood-900 text-sm">Rafiqul Islam</p>
-              <p class="text-xs text-stone-400">Gulshan, Dhaka</p>
-            </div>
-            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Corporate Client</span>
-          </div>
-        </div>
-
-        <!-- Review 3 -->
-        <div class="bg-cream-50 p-6 sm:p-7 rounded-3xl border border-cream-300/70 shadow-sm flex flex-col justify-between">
-          <div>
-            <div class="flex text-amber-500 text-sm mb-3">
-              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-            </div>
-            <p class="text-stone-700 text-sm italic leading-relaxed">
-              "The geometric wooden table lamp creates the warmest ambient light in my reading corner. You can smell the real wood finish! Prompt delivery via Sundarban courier."
-            </p>
-          </div>
-          <div class="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between">
-            <div>
-              <p class="font-bold text-wood-900 text-sm">Farhana Karim</p>
-              <p class="text-xs text-stone-400">Chattogram</p>
-            </div>
-            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Verified Buyer</span>
-          </div>
+      <!-- Approved reviews from delivered customers (filled from api/reviews.php) -->
+      <div id="reviewsList" class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-5 hidden"></div>
+      <div class="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <a href="https://www.facebook.com/InspiredCreationsBD/reviews" target="_blank" rel="noopener noreferrer" class="bg-cream-50 p-6 rounded-3xl border border-cream-300/70 shadow-sm hover:shadow-md transition text-center">
+          <i class="fa-brands fa-facebook text-3xl text-[#1877F2]"></i>
+          <p class="mt-3 font-semibold text-wood-900">Read &amp; write reviews</p>
+          <p class="text-xs text-stone-500 mt-1">On our Facebook page</p>
+        </a>
+        <a href="https://wa.me/8801321744476?text=Hi%20INSPIRED%20CREATIONS%2C%20here%20is%20my%20review%3A" target="_blank" rel="noopener noreferrer" class="bg-cream-50 p-6 rounded-3xl border border-cream-300/70 shadow-sm hover:shadow-md transition text-center">
+          <i class="fa-brands fa-whatsapp text-3xl text-emerald-600"></i>
+          <p class="mt-3 font-semibold text-wood-900">Send a photo review</p>
+          <p class="text-xs text-stone-500 mt-1">Share a picture of your gift on WhatsApp</p>
+        </a>
+        <div class="bg-cream-50 p-6 rounded-3xl border border-cream-300/70 shadow-sm text-center">
+          <i class="fa-solid fa-hand-holding-heart text-3xl text-amber-600"></i>
+          <p class="mt-3 font-semibold text-wood-900">Handmade in Dhaka</p>
+          <p class="text-xs text-stone-500 mt-1">Every piece is checked by hand before it ships</p>
         </div>
       </div>
-
     </div>
   </section>
 
@@ -1496,8 +1454,6 @@
         category: 'boxes',
         priceBDT: 2450,
         priceUSD: 22,
-        rating: 5.0,
-        reviewCount: 38,
         badge: 'Bestseller',
         image: 'assets/gallery/walnut-gift-box.jpg',
         wood: 'Solid Dark Walnut & Brass Hardware',
@@ -1510,8 +1466,6 @@
         category: 'home',
         priceBDT: 3200,
         priceUSD: 28,
-        rating: 4.9,
-        reviewCount: 46,
         badge: 'Top Gift',
         image: 'assets/gallery/walnut-desk-organizer.jpg',
         wood: 'American Walnut & Organic Oil Finish',
@@ -1525,8 +1479,6 @@
         category: 'keepsakes',
         priceBDT: 1250,
         priceUSD: 11,
-        rating: 4.8,
-        reviewCount: 29,
         badge: 'Popular',
         image: 'assets/gallery/oak-keepsake-frame.jpg',
         wood: 'Solid Natural Oak with Glass Shield',
@@ -1539,8 +1491,6 @@
         category: 'home',
         priceBDT: 4800,
         priceUSD: 42,
-        rating: 5.0,
-        reviewCount: 19,
         badge: 'Artisan Made',
         image: 'assets/gallery/geometric-table-lamp.jpg',
         wood: 'Layered Teak & Walnut Diamond Lattice',
@@ -1553,8 +1503,6 @@
         category: 'wall',
         priceBDT: 2950,
         priceUSD: 26,
-        rating: 4.9,
-        reviewCount: 32,
         badge: 'New Arrival',
         image: 'assets/gallery/oak-wall-clock.jpg',
         wood: 'Single Slab European Oak',
@@ -1567,8 +1515,6 @@
         category: 'keepsakes',
         priceBDT: 5500,
         priceUSD: 48,
-        rating: 5.0,
-        reviewCount: 15,
         badge: 'Grand Gift',
         image: 'assets/gallery/heritage-gift-set.jpg',
         wood: 'Mixed Teak, Mahogany & Walnut',
@@ -1683,7 +1629,7 @@
         const priceStr = priced ? formatPrice(product.priceBDT, product.priceUSD) : 'On request';
         
         return `
-          <div class="bg-cream-50 rounded-3xl border border-cream-300/70 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col group">
+          <div class="bg-cream-50 rounded-2xl sm:rounded-3xl border border-cream-300/70 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col group">
 
             <!-- Image Frame -->
             <div class="relative bg-cream-200 aspect-[4/3] overflow-hidden">
@@ -1692,31 +1638,31 @@
               </a>
               
               <!-- Badge -->
-              <span class="absolute top-3 left-3 bg-cream-50/90 backdrop-blur-sm text-wood-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-[0.15em]">
+              <span class="absolute top-2 left-2 sm:top-3 sm:left-3 bg-cream-50/90 backdrop-blur-sm text-wood-800 text-[8px] sm:text-[10px] font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full uppercase tracking-[0.12em] max-w-[70%] truncate">
                 ${product.badge}
               </span>
               ${product.freeShipping ? `
-              <span class="free-ship absolute top-11 left-3 inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-[0.12em] shadow-md">
+              <span class="free-ship absolute top-8 left-2 sm:top-11 sm:left-3 inline-flex items-center gap-1.5 text-[8px] sm:text-[10px] font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full uppercase tracking-[0.12em] shadow-md">
                 <i class="fa-solid fa-truck-fast"></i> Free Delivery
               </span>` : ''}
 
               <!-- Wishlist Toggle -->
-              <button data-wishlist-id="${product.id}" class="wishlist-toggle-btn absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-xs text-stone-600 hover:text-red-500 flex items-center justify-center shadow-sm transition" title="Save to Wishlist" aria-label="Save to Wishlist">
+              <button data-wishlist-id="${product.id}" class="wishlist-toggle-btn absolute top-2 right-2 sm:top-3 sm:right-3 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 backdrop-blur-xs text-stone-600 hover:text-red-500 flex items-center justify-center shadow-sm transition" title="Save to Wishlist" aria-label="Save to Wishlist">
                 <i class="${isWish ? 'fa-solid text-red-500' : 'fa-regular'} fa-heart text-sm"></i>
               </button>
 
               <!-- Quick View Floating Button -->
-              <button data-quickview-id="${product.id}" class="quickview-trigger-btn absolute bottom-3 inset-x-4 py-2 bg-white/95 hover:bg-white text-wood-900 font-bold text-xs rounded-xl shadow-md backdrop-blur-xs opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-1.5" aria-label="Quick View of ${product.title}">
+              <button data-quickview-id="${product.id}" class="quickview-trigger-btn hidden sm:flex absolute bottom-3 inset-x-4 py-2 bg-white/95 hover:bg-white text-wood-900 font-bold text-xs rounded-xl shadow-md backdrop-blur-xs opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-1.5" aria-label="Quick View of ${product.title}">
                 <i class="fa-regular fa-eye"></i>
                 <span>Quick View</span>
               </button>
             </div>
 
             <!-- Card Body -->
-            <div class="p-5 sm:p-6 flex-1 flex flex-col justify-between">
+            <div class="p-3 sm:p-6 flex-1 flex flex-col justify-between">
               <div>
                 <div class="flex items-center justify-between gap-2 mb-2">
-                  <span class="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700">${CATEGORY_LABELS[product.category]}</span>
+                  <span class="text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.2em] text-amber-700 truncate">${CATEGORY_LABELS[product.category]}</span>
                   ${product.rating ? `
                   <span class="flex items-center gap-1 text-amber-500 text-xs flex-shrink-0">
                     <i class="fa-solid fa-star text-[10px]"></i>
@@ -1725,16 +1671,16 @@
                   </span>` : ''}
                 </div>
 
-                <h3 class="font-serif font-semibold text-lg text-wood-900 group-hover:text-amber-700 transition line-clamp-1">
+                <h3 class="font-serif font-semibold text-sm sm:text-lg leading-snug text-wood-900 group-hover:text-amber-700 transition line-clamp-2 sm:line-clamp-1">
                   <a href="${productLink(product)}">${product.title}</a>
                 </h3>
 
-                <p class="text-sm text-stone-500 mt-1.5 line-clamp-2 leading-relaxed">
+                <p class="hidden sm:block text-sm text-stone-500 mt-1.5 line-clamp-2 leading-relaxed">
                   ${product.desc}
                 </p>
 
-                <div class="mt-3 flex items-center justify-between gap-3">
-                  <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-wood-700 min-w-0">
+                <div class="mt-2 sm:mt-3 flex items-center justify-between gap-3">
+                  <span class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-medium text-wood-700 min-w-0">
                     <i class="fa-solid fa-tree text-[9px] text-amber-600"></i>
                     <span class="truncate">${product.wood}</span>
                   </span>
@@ -1745,18 +1691,18 @@
               </div>
 
               <!-- Price & Add Button -->
-              <div class="mt-5 pt-4 border-t border-cream-300/70 flex items-center justify-between">
+              <div class="mt-3 sm:mt-5 pt-3 sm:pt-4 border-t border-cream-300/70 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
                 <div>
-                  <span class="text-[10px] text-stone-400 block uppercase tracking-wider">${priced ? 'From' : 'Price'}</span>
-                  <span class="${priced ? 'text-xl' : 'text-base'} font-semibold text-wood-900">${priceStr}</span>
+                  <span class="hidden sm:block text-[10px] text-stone-400 uppercase tracking-wider">${priced ? 'From' : 'Price'}</span>
+                  <span class="${priced ? 'text-base sm:text-xl' : 'text-sm sm:text-base'} font-semibold text-wood-900">${priceStr}</span>
                 </div>
 
                 ${priced ? `
-                <button data-add-id="${product.id}" class="add-to-cart-btn px-5 py-2.5 bg-wood-800 hover:bg-wood-900 text-cream-50 text-xs font-semibold rounded-full hover:shadow-md transition flex items-center gap-1.5" aria-label="Add ${product.title} to Cart">
+                <button data-add-id="${product.id}" class="add-to-cart-btn px-3 sm:px-5 py-2 sm:py-2.5 bg-wood-800 hover:bg-wood-900 text-cream-50 text-xs font-semibold rounded-full hover:shadow-md transition flex items-center justify-center gap-1.5" aria-label="Add ${product.title} to Cart">
                   <i class="fa-solid fa-plus text-[10px]"></i>
                   <span>Add to Cart</span>
                 </button>` : `
-                <a href="${quoteLink(product)}" target="_blank" rel="noopener noreferrer" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-full hover:shadow-md transition flex items-center gap-1.5" aria-label="Get a quote for ${product.title} on WhatsApp">
+                <a href="${quoteLink(product)}" target="_blank" rel="noopener noreferrer" class="px-3 sm:px-5 py-2 sm:py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-full hover:shadow-md transition flex items-center justify-center gap-1.5" aria-label="Get a quote for ${product.title} on WhatsApp">
                   <i class="fa-brands fa-whatsapp text-sm"></i>
                   <span>Get a Quote</span>
                 </a>`}
@@ -2822,6 +2768,28 @@
       window.addEventListener('hashchange', routeProductPage);
       routeProductPage();
 
+      // Real customer reviews (approved in admin → Reviews); the section keeps its invite cards when there are none yet
+      (async () => {
+        try {
+          const res = await fetch(API_BASE + 'reviews.php');
+          const data = await res.json();
+          if (!data.ok || !data.reviews.length) return;
+          const box = document.getElementById('reviewsList');
+          box.innerHTML = data.reviews.slice(0, 6).map(r => `
+            <figure class="bg-cream-50 p-6 rounded-3xl border border-cream-300/70 shadow-sm flex flex-col">
+              <div class="text-amber-500 text-sm" aria-label="${r.rating} out of 5 stars">${'<i class="fa-solid fa-star"></i>'.repeat(r.rating)}${'<i class="fa-regular fa-star text-stone-300"></i>'.repeat(5 - r.rating)}</div>
+              ${r.body ? `<blockquote class="mt-3 text-stone-700 text-sm leading-relaxed">“${escapeHtml(r.body)}”</blockquote>` : ''}
+              ${r.photo ? `<img src="${escapeHtml(r.photo)}" alt="Photo from ${escapeHtml(r.name)}" loading="lazy" class="mt-3 w-full aspect-[4/3] object-cover rounded-2xl">` : ''}
+              <figcaption class="mt-auto pt-4 border-t border-stone-100 flex items-center justify-between gap-2">
+                <span><span class="block font-bold text-wood-900 text-sm">${escapeHtml(r.name)}</span>
+                  <span class="block text-xs text-stone-400">${escapeHtml([r.district, r.product].filter(Boolean).join(' · '))}</span></span>
+                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full whitespace-nowrap"><i class="fa-solid fa-circle-check"></i> Verified Buyer</span>
+              </figcaption>
+            </figure>`).join('');
+          box.classList.remove('hidden');
+        } catch (err) {}
+      })();
+
       // On PHP hosting the product list comes from the admin panel's database;
       // on static hosting the request fails and the built-in list above stays.
       (async () => {
@@ -2832,6 +2800,9 @@
           const current = studioProduct.value;
           PRODUCTS.splice(0, PRODUCTS.length, ...data.products);
           if (data.shipping) Object.assign(SHIPPING, data.shipping);
+          // The top bar always shows the shop's real free-delivery rule from the admin panel
+          document.getElementById('freeDeliveryNote').textContent = SHIPPING.freeMin > 0
+            ? `Free delivery on orders over ${taka(SHIPPING.freeMin)}` : 'Delivery all over Bangladesh';
           updateCartUI();
           fillStudioProducts();
           const options = customizableProducts();
