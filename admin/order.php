@@ -61,7 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'redx_area_id' => (int) ($_POST['redx_area_id'] ?? 0), 'redx_area_name' => (string) ($_POST['redx_area_name'] ?? ''),
                 'weight' => max(0.1, (float) ($_POST['weight'] ?? 0.5)),
             ]);
-            flash("Parcel booked with $label — the order is now in Shipping.");
+            $booked = $pdo->prepare('SELECT consignment_id, tracking_code FROM orders WHERE id = ?');
+            $booked->execute([$id]);
+            $bookedRow = $booked->fetch() ?: [];
+            $newId = (string) (($bookedRow['consignment_id'] ?? '') ?: ($bookedRow['tracking_code'] ?? ''));
+            flash("Parcel booked with $label" . ($newId !== '' ? " — Consignment ID $newId" : '') . '. The order is now in Shipping.');
         } catch (Throwable $e) {
             flash("$label: " . $e->getMessage());
         }
@@ -129,6 +133,7 @@ $waTemplates = [
     'Advance received'=> "Hello $firstName, we've received your advance for order {$order['code']}. Your piece is now in production — we'll update you soon.",
     'On its way'      => "Hello $firstName, your order {$order['code']} is on its way!"
         . ($order['tracking_code'] ? " {$order['courier']} tracking: {$order['tracking_code']}." : '')
+        . ' See your parcel status here: ' . ic_track_url($pdo, $order)
         . ' Thank you for choosing INSPIRED CREATIONS.',
 ];
 
@@ -149,6 +154,10 @@ admin_header($order['code'], 'orders.php');
       </form>
     <?php endif; ?>
     <a href="<?= h(whatsapp_link($order['whatsapp'])) ?>" target="_blank" rel="noopener" class="btn bg-emerald-700 text-white hover:bg-emerald-800"><i class="fa-brands fa-whatsapp text-lg"></i> Message on WhatsApp</a>
+    <?php if ($order['address']): ?>
+      <a href="labels.php?ids=<?= $id ?>&amp;print=1" target="_blank" class="btn btn-light"><i class="fa-solid fa-print"></i> Print label</a>
+    <?php endif; ?>
+    <a href="<?= h(ic_track_url($pdo, $order)) ?>" target="_blank" rel="noopener" class="btn btn-light" title="The page the QR code on the label opens"><i class="fa-solid fa-qrcode"></i> Parcel status page</a>
   </div>
 </div>
 <?php if ($order['is_important'] && $order['reminder_date'] && $order['reminder_date'] <= date('Y-m-d') && !in_array($order['status'], IC_CLOSED_STATUSES, true)): ?>
@@ -304,10 +313,30 @@ admin_header($order['code'], 'orders.php');
     <section class="card p-5 space-y-4">
       <h2 class="font-serif text-lg text-wood-900"><i class="fa-solid fa-truck-fast text-gold-500"></i> Courier</h2>
       <?php if ($shipped): ?>
+        <?php $mainId = (string) ($order['consignment_id'] ?: $order['tracking_code']); ?>
+        <?php if ($mainId !== ''): ?>
+          <div class="rounded-2xl border-2 border-indigo-300 bg-indigo-50 p-4 text-center">
+            <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600"><?= h($order['courier']) ?> · <?= $order['consignment_id'] ? 'Consignment ID' : 'Tracking ID' ?></p>
+            <p class="mt-1 font-mono text-2xl font-extrabold text-indigo-900 break-all select-all" id="consignmentId"><?= h($mainId) ?></p>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button type="button" class="btn btn-light !py-1.5" id="copyConsignment" data-copy="<?= h($mainId) ?>"><i class="fa-regular fa-copy"></i> <span>Copy</span></button>
+              <a href="labels.php?ids=<?= $id ?>&amp;print=1" target="_blank" class="btn bg-indigo-700 text-white hover:bg-indigo-800 !py-1.5"><i class="fa-solid fa-print"></i> Print label</a>
+            </div>
+          </div>
+          <script>
+            document.getElementById('copyConsignment').addEventListener('click', async (e) => {
+              const btn = e.currentTarget;
+              try { await navigator.clipboard.writeText(btn.dataset.copy); } catch (err) {
+                const t = document.createElement('textarea'); t.value = btn.dataset.copy; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove();
+              }
+              btn.querySelector('span').textContent = 'Copied ✓';
+              setTimeout(() => { btn.querySelector('span').textContent = 'Copy'; }, 1500);
+            });
+          </script>
+        <?php endif; ?>
         <dl class="text-sm space-y-1.5">
           <div class="flex justify-between gap-3"><dt class="text-stone-500">Courier</dt><dd class="font-semibold"><?= h($order['courier']) ?></dd></div>
-          <?php if ($order['tracking_code']): ?><div class="flex justify-between gap-3"><dt class="text-stone-500">Tracking</dt><dd class="font-mono"><?= h($order['tracking_code']) ?></dd></div><?php endif; ?>
-          <?php if ($order['consignment_id']): ?><div class="flex justify-between gap-3"><dt class="text-stone-500">Consignment</dt><dd class="font-mono"><?= h($order['consignment_id']) ?></dd></div><?php endif; ?>
+          <?php if ($order['tracking_code'] && $order['tracking_code'] !== $mainId): ?><div class="flex justify-between gap-3"><dt class="text-stone-500">Tracking</dt><dd class="font-mono"><?= h($order['tracking_code']) ?></dd></div><?php endif; ?>
           <?php if ($order['courier_status']): ?><div class="flex justify-between gap-3"><dt class="text-stone-500">Courier status</dt><dd><?= h(str_replace('_', ' ', $order['courier_status'])) ?></dd></div><?php endif; ?>
           <div class="flex justify-between gap-3"><dt class="text-stone-500">COD</dt><dd><?= money($order['cod_bdt']) ?></dd></div>
           <?php if ($order['shipped_at']): ?><div class="flex justify-between gap-3"><dt class="text-stone-500">Booked</dt><dd><?= h(date('d M Y, g:i a', strtotime($order['shipped_at']))) ?></dd></div><?php endif; ?>

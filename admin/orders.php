@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
     $done = 0;
     $failed = [];
+    $sentIds = [];
     foreach ($ids as $id) {
         $stmt = $pdo->prepare('SELECT * FROM orders WHERE id = ?');
         $stmt->execute([$id]);
@@ -40,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new RuntimeException('needs an address and a total first');
                 }
                 ic_courier_create($pdo, $order, max(0, (int) $order['total_bdt'] - (int) $order['advance_bdt']));
+                $sentIds[] = $id;
                 $done++;
             } catch (Throwable $e) {
                 $failed[] = "{$order['code']} ({$e->getMessage()})";
@@ -51,6 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'courier' => 'sent to ' . ($defaultCourierKey ? IC_COURIERS[$defaultCourierKey]['label'] : 'the courier'),
         'fake' => 'marked as fake', 'not_fake' => 'moved back to New'];
     flash("$done order" . ($done === 1 ? '' : 's') . ' ' . ($labels[$action] ?? 'updated') . '.' . ($failed ? ' Not sent: ' . implode('; ', $failed) : ''));
+    if ($sentIds) {
+        $_SESSION['just_sent'] = $sentIds; // shown once as a highlighted panel with the new consignment IDs
+    }
     redirect('orders.php?' . (string) ($_POST['return'] ?? ''));
 }
 
@@ -97,6 +102,30 @@ $link = function (array $extra) use ($query) {
 $title = $important ? 'Important orders' : ($period === 'today' ? "Today's orders" : ($period === 'month' ? "This month's orders" : 'Orders'));
 $waitingAlertDays = (int) (ic_config()['waiting_alert_days'] ?? 5);
 
+// Orders just sent to the courier (bulk send) — highlighted once with their consignment IDs
+$justSentIds = array_map('intval', (array) ($_SESSION['just_sent'] ?? []));
+unset($_SESSION['just_sent']);
+$justSent = [];
+if ($justSentIds) {
+    $js = $pdo->prepare('SELECT id, code, customer_name, courier, consignment_id, tracking_code FROM orders WHERE id IN (' . implode(',', array_fill(0, count($justSentIds), '?')) . ') ORDER BY id');
+    $js->execute($justSentIds);
+    $justSent = $js->fetchAll();
+}
+$bookedTodayStmt = $pdo->prepare('SELECT COUNT(*) FROM orders WHERE shipped_at >= ?');
+$bookedTodayStmt->execute([date('Y-m-d 00:00:00')]);
+$bookedToday = (int) $bookedTodayStmt->fetchColumn();
+
+// Highlighted consignment / tracking ID chip with a copy button
+$idChip = function (array $o, bool $big = false): string {
+    $id = (string) ($o['consignment_id'] ?: $o['tracking_code']);
+    if ($id === '') {
+        return '';
+    }
+    return '<span class="inline-flex items-center gap-1 rounded-md bg-indigo-100 text-indigo-800 ring-1 ring-indigo-300 font-mono font-bold '
+        . ($big ? 'text-base px-2.5 py-1' : 'text-xs px-1.5 py-0.5') . '" title="Consignment ID">' . h($id)
+        . '<button type="button" class="copy-id text-indigo-500 hover:text-indigo-900" data-copy="' . h($id) . '" title="Copy ID" aria-label="Copy ' . h($id) . '"><i class="fa-regular fa-copy"></i></button></span>';
+};
+
 admin_header('Orders', 'orders.php');
 ?>
 <div class="flex flex-wrap items-end justify-between gap-3 mb-6">
@@ -119,16 +148,37 @@ admin_header('Orders', 'orders.php');
   <?php endforeach; ?>
 </div>
 
+<?php if ($justSent): $sentIdsCsv = implode(',', array_column($justSent, 'id')); ?>
+  <div class="mb-5 rounded-2xl border-2 border-indigo-300 bg-indigo-50 p-4 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+      <p class="font-semibold text-indigo-900"><i class="fa-solid fa-circle-check text-indigo-600"></i> <?= count($justSent) ?> order<?= count($justSent) === 1 ? '' : 's' ?> sent to <?= h($justSent[0]['courier'] ?: 'the courier') ?> — Consignment IDs</p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="btn btn-light !py-1.5" id="copyAllIds" data-ids="<?= h(implode("\n", array_map(function ($o) { return $o['code'] . "\t" . ($o['consignment_id'] ?: $o['tracking_code']); }, $justSent))) ?>"><i class="fa-regular fa-copy"></i> <span>Copy all IDs</span></button>
+        <a href="labels.php?ids=<?= h($sentIdsCsv) ?>&amp;print=1" target="_blank" class="btn bg-indigo-700 text-white hover:bg-indigo-800 !py-1.5"><i class="fa-solid fa-print"></i> Print these labels</a>
+      </div>
+    </div>
+    <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <?php foreach ($justSent as $s): ?>
+        <li class="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 ring-1 ring-indigo-200">
+          <a href="order.php?id=<?= (int) $s['id'] ?>" class="min-w-0 text-sm"><span class="font-semibold text-wood-900"><?= h($s['code']) ?></span><span class="block truncate text-xs text-stone-500"><?= h($s['customer_name']) ?></span></a>
+          <?= $idChip($s, true) ?>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
+<?php endif; ?>
+
 <form method="post" class="card overflow-hidden" id="bulkForm">
   <?= csrf_field() ?>
   <input type="hidden" name="return" value="<?= h(http_build_query($query)) ?>">
   <div class="flex flex-nowrap sm:flex-wrap items-center gap-2 px-3 sm:px-4 py-3 border-b border-cream-300 bg-cream-50 text-sm overflow-x-auto [scrollbar-width:none]">
-    <label class="sm:hidden flex items-center gap-1.5 text-stone-600 whitespace-nowrap"><input type="checkbox" id="selectAllMobile" class="rounded w-5 h-5"> All</label>
+    <label class="lg:hidden flex items-center gap-1.5 text-stone-600 whitespace-nowrap"><input type="checkbox" id="selectAllMobile" class="rounded w-5 h-5"> All</label>
     <span class="text-stone-500 mr-1 whitespace-nowrap"><span id="selectedCount">0</span> selected:</span>
     <button name="action" value="confirm" class="btn btn-light !py-1.5"><i class="fa-solid fa-circle-check text-sky-600"></i> Confirm</button>
     <?php if ($defaultCourier = ic_default_courier($pdo)): ?>
       <button name="action" value="courier" class="btn btn-light !py-1.5"><i class="fa-solid fa-truck-fast text-indigo-600"></i> Send to <?= h(IC_COURIERS[$defaultCourier]['label']) ?></button>
     <?php endif; ?>
+    <button type="button" id="printLabels" class="btn btn-light !py-1.5 whitespace-nowrap"><i class="fa-solid fa-print text-wood-700"></i> Print labels</button>
     <button name="action" value="hold" class="btn btn-light !py-1.5"><i class="fa-solid fa-hand text-orange-600"></i> Hold</button>
     <?php if ($status === 'fake'): ?>
       <button name="action" value="not_fake" class="btn btn-light !py-1.5"><i class="fa-solid fa-user-check text-emerald-600"></i> Not fake — move to New</button>
@@ -136,15 +186,18 @@ admin_header('Orders', 'orders.php');
       <button name="action" value="fake" class="btn btn-light !py-1.5"><i class="fa-solid fa-user-secret text-red-600"></i> Mark fake</button>
     <?php endif; ?>
     <button name="action" value="cancel" class="btn btn-light !py-1.5" onclick="return confirm('Cancel the selected orders?');"><i class="fa-solid fa-ban text-stone-500"></i> Cancel</button>
+    <?php if ($bookedToday): ?>
+      <a href="labels.php?booked=today&amp;print=1" target="_blank" class="btn bg-indigo-700 text-white hover:bg-indigo-800 !py-1.5 whitespace-nowrap sm:ml-auto"><i class="fa-solid fa-print"></i> Today's courier labels (<?= $bookedToday ?>)</a>
+    <?php endif; ?>
   </div>
   <?php if (!$orders): ?>
     <p class="p-6 text-sm text-stone-500">No orders found.</p>
   <?php else: ?>
-  <!-- Phones: one card per order (the table below is for bigger screens) -->
-  <div class="sm:hidden divide-y divide-cream-200">
+  <!-- Phones and small windows: one card per order (the table below is for wide screens) -->
+  <div class="lg:hidden divide-y divide-cream-200">
     <?php foreach ($orders as $o):
         $items = (array) json_decode($o['items_json'], true); ?>
-      <div class="flex gap-3 p-3">
+      <div class="flex gap-3 p-3 <?= in_array((int) $o['id'], $justSentIds, true) ? 'bg-indigo-50 ring-2 ring-inset ring-indigo-300' : '' ?>">
         <input type="checkbox" name="ids[]" value="<?= (int) $o['id'] ?>" class="row-check rounded mt-1 w-5 h-5 flex-shrink-0" aria-label="Select <?= h($o['code']) ?>">
         <a href="order.php?id=<?= (int) $o['id'] ?>" class="flex-1 min-w-0 block">
           <span class="flex items-start justify-between gap-2">
@@ -159,14 +212,14 @@ admin_header('Orders', 'orders.php');
           <span class="block text-xs text-stone-500 truncate"><?= h(($items[0]['title'] ?? '') . (isset($items[0]) ? ' × ' . (int) $items[0]['qty'] : '')) ?><?= count($items) > 1 ? ' +' . (count($items) - 1) . ' more' : '' ?></span>
           <span class="flex flex-wrap items-center gap-2 mt-1 text-xs text-stone-500">
             <?= score_badge($o['delivery_score']) ?>
-            <?php if ($o['courier']): ?><span><i class="fa-solid fa-truck-fast"></i> <?= h($o['courier']) ?> <?= h($o['tracking_code'] ?: $o['consignment_id']) ?></span><?php endif; ?>
+            <?php if ($o['courier']): ?><span class="inline-flex items-center gap-1"><i class="fa-solid fa-truck-fast"></i> <?= h($o['courier']) ?> <?= $idChip($o) ?></span><?php endif; ?>
             <?php if ($o['reminder_date']): ?><span class="<?= $o['reminder_date'] <= date('Y-m-d') ? 'text-red-700 font-semibold' : '' ?>"><i class="fa-regular fa-bell"></i> <?= h(date('d M', strtotime($o['reminder_date']))) ?></span><?php endif; ?>
           </span>
         </a>
       </div>
     <?php endforeach; ?>
   </div>
-  <div class="overflow-x-auto hidden sm:block">
+  <div class="overflow-x-auto hidden lg:block">
     <table class="min-w-full divide-y divide-cream-200">
       <thead class="bg-cream-50">
         <tr>
@@ -178,7 +231,7 @@ admin_header('Orders', 'orders.php');
         <?php foreach ($orders as $o):
             $items = (array) json_decode($o['items_json'], true);
             $waitingDays = $o['status'] === 'waiting' ? (int) floor((time() - strtotime($o['shipped_at'] ?: $o['status_changed_at'])) / 86400) : null; ?>
-          <tr class="hover:bg-cream-50">
+          <tr class="<?= in_array((int) $o['id'], $justSentIds, true) ? 'bg-indigo-50 outline outline-2 -outline-offset-2 outline-indigo-300' : 'hover:bg-cream-50' ?>">
             <td class="td"><input type="checkbox" name="ids[]" value="<?= (int) $o['id'] ?>" class="row-check rounded" aria-label="Select <?= h($o['code']) ?>"></td>
             <td class="td">
               <a href="order.php?id=<?= (int) $o['id'] ?>" class="font-semibold text-wood-900 hover:underline"><?= h($o['code']) ?></a>
@@ -200,7 +253,7 @@ admin_header('Orders', 'orders.php');
             <td class="td text-xs"><?= h($o['payment_method'] ?? '—') ?><?php if ($o['trx_id']): ?><span class="block font-mono text-stone-500"><?= h($o['trx_id']) ?></span><?php endif; ?></td>
             <td class="td text-xs">
               <?php if ($o['courier']): ?>
-                <?= h($o['courier']) ?><span class="block font-mono text-stone-500"><?= h($o['tracking_code'] ?: $o['consignment_id']) ?></span>
+                <?= h($o['courier']) ?><span class="block mt-0.5"><?= $idChip($o) ?></span>
                 <?php if ($o['cod_bdt'] !== null): ?><span class="block text-stone-500">COD <?= money($o['cod_bdt']) ?></span><?php endif; ?>
               <?php else: ?>—<?php endif; ?>
             </td>
@@ -235,5 +288,24 @@ admin_header('Orders', 'orders.php');
     if (!visible().some(c => c.checked)) { e.preventDefault(); alert('Tick at least one order first.'); return; }
     checks.filter(c => c.offsetParent === null).forEach(c => { c.disabled = true; }); // never send an order twice
   });
+  // One click: courier labels for the ticked orders open in a new tab, ready to print
+  document.getElementById('printLabels').addEventListener('click', () => {
+    const ids = visible().filter(c => c.checked).map(c => c.value);
+    if (!ids.length) { alert('Tick the orders whose labels you want to print.'); return; }
+    window.open('labels.php?ids=' + ids.join(',') + '&print=1', '_blank');
+  });
+  const copyText = async (text, el) => {
+    try { await navigator.clipboard.writeText(text); } catch (e) {
+      const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove();
+    }
+    const icon = el.querySelector('i'); const old = icon.className;
+    icon.className = 'fa-solid fa-check text-emerald-600';
+    setTimeout(() => { icon.className = old; }, 1200);
+  };
+  document.querySelectorAll('.copy-id').forEach(b => b.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation(); // the chip sits inside the order link on phones
+    copyText(b.dataset.copy, b);
+  }));
+  document.getElementById('copyAllIds')?.addEventListener('click', (e) => copyText(e.currentTarget.dataset.ids, e.currentTarget));
 </script>
 <?php admin_footer();

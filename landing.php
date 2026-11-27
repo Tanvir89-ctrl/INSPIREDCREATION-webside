@@ -172,6 +172,8 @@ $config = [
     'normal'   => $timed ? $normalPrice : null,
     'addons'   => array_map($publicProduct, $addons),
     'freeMin'  => $ship['freeMin'],
+    'save'     => $regular ? $regular - $price : 0,
+    'discount' => $discount,
     'payment'  => $data['payment'],
     'wa'       => $waIntl,
     'pixel'    => $pixel,
@@ -859,7 +861,27 @@ $hero = function () use ($data, $tpl, $heroLayout, $slider, $priceBox, $countdow
     .free-bar p { margin: 0 0 8px; font-size: 14px; color: var(--ink); }
     .fb-track { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--cta) 15%, #fff); overflow: hidden; }
     .fb-track i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, var(--cta), var(--accent)); transition: width .6s cubic-bezier(.2,.8,.2,1); }
-    .free-bar.done { border-style: solid; }
+    /* Free delivery reached: the bar turns into a bright green "you got it" strip */
+    .free-bar.fb-done { border: 0; background: linear-gradient(100deg, #16a34a, #22c55e 55%, #4ade80); box-shadow: 0 8px 22px rgba(22, 163, 74, .35); animation: fbPop .5s cubic-bezier(.2,1.4,.4,1); }
+    .free-bar.fb-done p { color: #fff; font-weight: 700; font-size: 15px; margin: 0; text-align: center; }
+    .free-bar.fb-done p b { color: #fef08a; }
+    .free-bar.fb-done .fb-track { display: none; }
+    @keyframes fbPop { 0% { transform: scale(.92); } 100% { transform: scale(1); } }
+    /* Small pop-up message (free delivery / discount): never blocks the page, closes by itself */
+    .lp-toast { position: fixed; left: 50%; top: 14px; z-index: 70; width: min(380px, calc(100% - 24px)); transform: translate(-50%, -140%); opacity: 0; transition: transform .45s cubic-bezier(.2,1.3,.4,1), opacity .3s; pointer-events: none; }
+    .lp-toast.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+    .lp-toast-card { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 40px 14px 12px; border-radius: 16px; background: #fff; color: #1f2937; box-shadow: 0 14px 40px rgba(0, 0, 0, .22); overflow: hidden; border: 2px solid var(--t-color, #16a34a); }
+    .lp-toast-ic { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; background: var(--t-color, #16a34a); color: #fff; animation: toastWiggle 1s ease-in-out .3s 2; }
+    .lp-toast-title { margin: 0; font-weight: 800; font-size: 16px; color: var(--t-color, #16a34a); font-family: var(--body), sans-serif; }
+    .lp-toast-text { margin: 2px 0 0; font-size: 14px; line-height: 1.4; }
+    .lp-toast-text b { color: #111; }
+    .lp-toast-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border: 0; border-radius: 50%; background: #f3f4f6; color: #374151; font-size: 14px; cursor: pointer; line-height: 1; }
+    .lp-toast-time { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: var(--t-color, #16a34a); transform-origin: left; }
+    .lp-toast.show .lp-toast-time { animation: toastTime var(--t-ms, 2500ms) linear forwards; }
+    .lp-toast:hover .lp-toast-time { animation-play-state: paused; }
+    @keyframes toastTime { to { transform: scaleX(0); } }
+    @keyframes toastWiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-14deg) scale(1.08); } 75% { transform: rotate(14deg) scale(1.08); } }
+    @media (prefers-reduced-motion: reduce) { .lp-toast, .lp-toast-ic { transition: opacity .2s; animation: none; } }
     .remembered { margin: -4px 0 10px; font-size: 13px; color: #15803d; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .remembered button { border: 0; background: none; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 13px; padding: 0; }
     .tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
@@ -1288,6 +1310,50 @@ case 'classic': ?>
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const $ = (s, el = document) => el.querySelector(s);
     const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+
+    /* ---- Small pop-up messages: slide in at the top, close by themselves after a moment (or with ✕) ---- */
+    const toastQueue = [];
+    let toastBusy = false;
+    const showNextToast = () => {
+      const o = toastQueue.shift();
+      if (!o) { toastBusy = false; return; }
+      toastBusy = true;
+      const ms = o.ms || 2500;
+      const el = document.createElement('div');
+      el.className = 'lp-toast';
+      el.setAttribute('role', 'status');
+      el.setAttribute('aria-live', 'polite');
+      el.style.setProperty('--t-color', o.color);
+      el.style.setProperty('--t-ms', ms + 'ms');
+      el.innerHTML = `<div class="lp-toast-card"><span class="lp-toast-ic">${o.icon}</span><div><p class="lp-toast-title">${o.title}</p><p class="lp-toast-text">${o.text}</p></div><button type="button" class="lp-toast-x" aria-label="বন্ধ করুন">✕</button><i class="lp-toast-time"></i></div>`;
+      document.body.appendChild(el);
+      let timer, left = ms, since = 0, closed = false;
+      const close = () => {
+        if (closed) return;
+        closed = true; clearTimeout(timer);
+        el.classList.remove('show');
+        setTimeout(() => { el.remove(); setTimeout(showNextToast, 250); }, 450);
+      };
+      const run = () => { since = Date.now(); timer = setTimeout(close, left); };
+      el.addEventListener('mouseenter', () => { clearTimeout(timer); left = Math.max(700, left - (Date.now() - since)); });
+      el.addEventListener('mouseleave', () => { if (!closed) run(); });
+      el.querySelector('.lp-toast-x').addEventListener('click', close);
+      requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add('show'); run(); }));
+    };
+    const toast = (o) => { toastQueue.push(o); if (!toastBusy) showNextToast(); };
+    // Runs fn once, the first time el is really on screen
+    const whenSeen = (el, fn) => {
+      if (!('IntersectionObserver' in window)) { fn(); return; }
+      const io = new IntersectionObserver((entries) => {
+        if (entries.some(e => e.isIntersecting)) { io.disconnect(); fn(); }
+      }, { threshold: .6 });
+      io.observe(el);
+    };
+    let wasFree = null;
+    const freeToast = () => toast({
+      icon: '🚚', color: '#16a34a', title: 'অভিনন্দন! ফ্রি ডেলিভারি 🎉',
+      text: 'এই অর্ডারে আপনার <b>ডেলিভারি চার্জ লাগবে না</b> — এখনই অর্ডার কনফার্ম করুন!',
+    });
     const BN = '০১২৩৪৫৬৭৮৯';
     const bn = (n) => Math.round(n).toLocaleString('en-US').replace(/\d/g, d => BN[d]);
     const toEn = (s) => String(s).replace(/[০-৯]/g, d => BN.indexOf(d));
@@ -1438,6 +1504,23 @@ case 'classic': ?>
       tick();
     }
 
+    /* ---- Discount pop-up: the real saving on this product, once per visit, a few seconds after the page opens ---- */
+    if (LP.save > 0 && LP.product) {
+      let seen = false;
+      try { seen = sessionStorage.getItem('ic_disc_' + LP.landing) === '1'; } catch (err) {}
+      if (!seen || LP.preview) {
+        setTimeout(() => {
+          if (document.body.classList.contains('offer-ended')) return;
+          try { sessionStorage.setItem('ic_disc_' + LP.landing, '1'); } catch (err) {}
+          toast({
+            icon: '🎁', color: '#e11d48', title: `বিশেষ অফার — ${bn(LP.discount)}% ছাড়!`,
+            text: `এই পণ্যে এখন আপনি <b>৳${bn(LP.save)} সাশ্রয়</b> করছেন` + (LP.end ? ' — অফার শেষ হওয়ার আগেই অর্ডার করুন!' : '। আজই অর্ডার করে নিন!'),
+            ms: 3000,
+          });
+        }, 2500);
+      }
+    }
+
     /* ---- Customer photo lightbox ---- */
     const lb = $('#lightbox');
     $$('.g-item').forEach(b => b.addEventListener('click', () => { $('img', lb).src = b.dataset.full; lb.hidden = false; }));
@@ -1503,8 +1586,13 @@ case 'classic': ?>
           const left = LP.freeMin - t.subtotal;
           $('p', bar).innerHTML = left > 0 ? `আর মাত্র <b>৳${bn(left)}</b> এর পণ্য যোগ করলে <b>ডেলিভারি ফ্রি!</b>` : '🎉 অভিনন্দন! আপনি <b>ফ্রি ডেলিভারি</b> পাচ্ছেন';
           $('i', bar).style.width = Math.min(100, t.subtotal / LP.freeMin * 100) + '%';
-          bar.classList.toggle('done', left <= 0);
+          bar.classList.toggle('fb-done', left <= 0);
         }
+        // Pop-up when the order reaches free delivery (more pieces), or the first time a free order is seen
+        const isFree = !bar.hidden && LP.freeMin - t.subtotal <= 0;
+        if (isFree && wasFree === false) freeToast();
+        else if (isFree && wasFree === null) whenSeen(bar, freeToast);
+        wasFree = isFree;
       }
     }
     document.addEventListener('click', (e) => {

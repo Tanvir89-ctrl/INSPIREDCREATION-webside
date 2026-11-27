@@ -348,6 +348,15 @@ function ic_set_status(PDO $pdo, int $orderId, string $status): void
     $now = ic_now();
     $pdo->prepare('UPDATE orders SET status = ?, status_changed_at = ?, updated_at = ? WHERE id = ?')
         ->execute([$status, $now, $now, $orderId]);
+    // Remember when each step first happened (shown on the customer's parcel status page)
+    $stmt = $pdo->prepare('SELECT details_json FROM orders WHERE id = ?');
+    $stmt->execute([$orderId]);
+    $details = json_decode((string) $stmt->fetchColumn(), true) ?: [];
+    if (empty($details['times'][$status])) {
+        $details['times'][$status] = $now;
+        $pdo->prepare('UPDATE orders SET details_json = ? WHERE id = ?')
+            ->execute([json_encode($details, JSON_UNESCAPED_UNICODE), $orderId]);
+    }
     if ($status === 'delivered') {
         ic_review_after_delivery($pdo, $orderId); // emails the review link once, when the customer gave an email
     }

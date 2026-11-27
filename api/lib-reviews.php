@@ -33,7 +33,7 @@ function ic_site_url(): ?string
     // The site's folder: pages in api/ or admin/ live one level below it
     $dir = str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php')));
     if (preg_match('#/(api|admin)$#', $dir)) {
-        $dir = dirname($dir);
+        $dir = str_replace('\\', '/', dirname($dir)); // Windows gives "\" for the top folder
     }
     $dir = rtrim($dir, '/.');
     return ($https ? 'https://' : 'http://') . $host . $dir;
@@ -43,6 +43,19 @@ function ic_review_url(PDO $pdo, array $order): ?string
 {
     $base = ic_site_url();
     return $base === null ? null : $base . '/review.php?o=' . rawurlencode($order['code']) . '&t=' . ic_review_token($pdo, $order['code']);
+}
+
+// Parcel status page (the QR code on the courier label opens it). Signed like the review link, so order pages
+// cannot be guessed; it shows only a masked name/phone, never the full address.
+function ic_track_token(PDO $pdo, string $orderCode): string
+{
+    return substr(hash_hmac('sha256', 'track|' . $orderCode, ic_review_secret($pdo)), 0, 12);
+}
+
+function ic_track_url(PDO $pdo, array $order): ?string
+{
+    $base = ic_site_url();
+    return $base === null ? null : $base . '/track.php?o=' . rawurlencode($order['code']) . '&k=' . ic_track_token($pdo, $order['code']);
 }
 
 // WhatsApp message (Bangla) the shop can send with the review link
